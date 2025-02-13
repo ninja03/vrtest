@@ -53,6 +53,74 @@ deno task start
 http://localhost:8000
 ```
 
+## 💻 開発とデバッグ
+
+### 開発モード
+
+開発モードでは、VRデバイスがなくてもPC上で開発とデバッグが可能です：
+
+1. **デバッグモードの有効化**:
+```bash
+# 開発サーバー起動時にデバッグフラグを追加
+deno task start --debug
+```
+
+2. **キーボード・マウス操作**:
+- WASD: カメラの移動
+- マウス: カメラの回転
+- クリック: オブジェクトとの対話
+- スペース: ジャンプ
+
+3. **開発者ツール**:
+- F12キーでChrome DevToolsを開く
+- Consoleタブ: WebSocket通信ログの確認
+- Networkタブ: WebSocket接続状態の監視
+- Sourcesタブ: ブレークポイントを使用したデバッグ
+
+### デバッグ情報の表示
+
+1. **WebSocket通信のデバッグ**:
+```typescript
+// routes/api/ws.ts にデバッグログを追加
+console.log('[WS] メッセージ受信:', message);
+```
+
+2. **3D環境の状態確認**:
+- 画面左上に座標とFPSを表示
+- オブジェクトの衝突判定の可視化
+- カメラの視錐台の表示
+
+3. **パフォーマンスモニタリング**:
+- Chrome DevToolsのPerformanceタブ
+- Three.jsの統計情報（Stats.js）
+- メモリ使用量の監視
+
+### エラーハンドリング
+
+1. **WebSocket接続エラー**:
+```typescript
+ws.onerror = (error) => {
+  console.error('[WS] エラー:', error);
+  // 再接続ロジック
+};
+```
+
+2. **3Dオブジェクトのロードエラー**:
+```typescript
+loader.onError = (error) => {
+  console.error('[3D] ロードエラー:', error);
+  // フォールバックモデルの表示
+};
+```
+
+3. **VR機能の互換性チェック**:
+```typescript
+if (!navigator.xr) {
+  console.warn('[VR] WebXR未対応のブラウザです');
+  // 非VRモードへのフォールバック
+}
+```
+
 ## 💡 使用方法
 
 1. アプリケーションにアクセスすると、3D空間が表示されます
