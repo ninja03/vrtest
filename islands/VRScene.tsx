@@ -27,6 +27,11 @@ export default function VRScene() {
   const audioListenerRef = useRef<THREE.AudioListener | null>(null);
   const soundRef = useRef<THREE.PositionalAudio | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const mouseRef = useRef({
+    isDown: false,
+    x: 0,
+    y: 0
+  });
 
   // WebSocketメッセージの送信
   const sendWsMessage = (message: any) => {
@@ -334,7 +339,45 @@ export default function VRScene() {
       rendererRef.current.setSize(width, height);
     }
 
+    // マウスイベントハンドラー
+    function handleMouseDown(event: MouseEvent) {
+      mouseRef.current.isDown = true;
+      mouseRef.current.x = event.clientX;
+      mouseRef.current.y = event.clientY;
+    }
+
+    function handleMouseUp() {
+      mouseRef.current.isDown = false;
+    }
+
+    function handleMouseMove(event: MouseEvent) {
+      if (!mouseRef.current.isDown || !cameraRef.current || isInVR) return;
+
+      const deltaX = event.clientX - mouseRef.current.x;
+      const deltaY = event.clientY - mouseRef.current.y;
+
+      // カメラの回転速度（値が小さいほど遅く回転）
+      const rotationSpeed = 0.005;
+
+      // Y軸周りの回転（左右）
+      cameraRef.current.rotation.y -= deltaX * rotationSpeed;
+
+      // X軸周りの回転（上下）を制限付きで適用
+      const newRotationX = cameraRef.current.rotation.x - deltaY * rotationSpeed;
+      // 上下の回転を-45度から45度に制限
+      cameraRef.current.rotation.x = Math.max(
+        -Math.PI / 4,
+        Math.min(Math.PI / 4, newRotationX)
+      );
+
+      mouseRef.current.x = event.clientX;
+      mouseRef.current.y = event.clientY;
+    }
+
     window.addEventListener('resize', handleResize);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
 
     // クリーンアップ
     return () => {
@@ -349,6 +392,9 @@ export default function VRScene() {
       if (wsRef.current) {
         wsRef.current.close();
       }
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -361,6 +407,8 @@ export default function VRScene() {
           height: "100vh",
           position: "relative",
           overflow: "hidden"
+,
+          cursor: mouseRef.current.isDown ? "grabbing" : "grab"
         }}
       />
       {isVRSupported && !isInVR && (
